@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="cb962bfa-7f36-487b-9cc8-4c544cbb9f48" name="Self_NE" url="http://10.141.209.223">
+        <fileTransfer host="10.141.209.223" port="22" rootFolder="/home/carbondata" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
