@@ -91,7 +91,7 @@ def transition_node_prob_with_one_node(G):
     return alias_nodes
 
 
-def transition_node_prob_with_two_nodes(G, p, q):
+def transition_node_prob_with_two_nodes(G, direceted, p, q):
     """
     实际上这是在node2vec中的，因为node2vec考虑的不仅是当前节点，而是有两个节点。名字虽然是alias_edges，但是实际上，
     :param p, q: DFS BFS的控制参数
@@ -108,7 +108,7 @@ def transition_node_prob_with_two_nodes(G, p, q):
         for neighbor in neighbors_of_v:
             if neighbor == t:
                 weights.append(G[v][neighbor]['weight'] / p)
-            elif G.has_edge(neighbor, t) or G.has_edge(t, neighbor):
+            elif G.has_edge(neighbor, t):
                 weights.append(G[v][neighbor]['weight'])
             else:
                 weights.append(G[v][neighbor]['weight'] / q)
@@ -117,8 +117,14 @@ def transition_node_prob_with_two_nodes(G, p, q):
         return alias_setup(norm_weights)
     
     alias_edges = {}
-    for edge in G.edges():
-        alias_edges[edge] = get_alias_with_two_nodes(G, edge[0], edge[1], p, q)
+    if direceted:
+        for edge in G.edges():
+            alias_edges[edge] = get_alias_with_two_nodes(G, edge[0], edge[1], p, q)
+    else:
+        for edge in G.edges():
+            alias_edges[edge] = get_alias_with_two_nodes(G, edge[0], edge[1], p, q)
+            alias_edges[(edge[1], edge[0])] = get_alias_with_two_nodes(G, edge[1], edge[0], p, q)
+
     return alias_edges
 
 
@@ -129,26 +135,24 @@ def node2vec_walk(G, start, walk_length, alias_nodes, alias_edges):
     :return:
     """
     path = [start]
-    v = path[-1]
     while len(path) < walk_length:
-        neighbors = G.neighbors(v)
+        v = path[-1]
+        neighbors = list(G.neighbors(v))
         num = len(neighbors)
-        while num > 0:
+        if num > 0:
             if len(path) == 1:
-                index = np.floor(np.random.rand())
+                index = int(np.floor(np.random.rand() * num))
                 if np.random.rand() < alias_nodes[start][0][index]:
                     path.append(neighbors[index])
                 else:
                     path.append(neighbors[alias_nodes[start][1][index]])
-                v = path[-1]
             else:
                 t = path[-2]
-                index = np.floor(np.random.rand())
+                index = int(np.floor(np.random.rand() * num))
                 if np.random.rand() < alias_edges[(t, v)][0][index]:
                     path.append(neighbors[index])
                 else:
                     path.append(neighbors[alias_edges[(t, v)][1][index]])
-                v = path[-1]
     return path
 
 
@@ -187,21 +191,21 @@ def walks(G, times, walk_length, alias_nodes):
 
 
 if __name__ == '__main__':
-    # cora data set
+    # Option0 [selection of data sets]-> cora data set
     # edge_file_path = 'data/cora/cora.cites'
     # content_file_path = 'data/cora/cora.content'
     # output_path = 'out/cora/out_paths.txt'
     # out_model_path = 'out/cora/model.txt'
     # ids, labels = extract_ids_labels(content_file_path)
     
-    # wiki data set
+    # Option0 [selection of data sets]-> wiki data set
     # edge_file_path = 'data/wiki/Wiki_edgelist.txt'
     # content_file_path = 'data/wiki/wiki_labels.txt'
     # output_path = 'out/wiki/out_paths.txt'
     # out_model_path = 'out/wiki/model.txt'
     # ids, labels = extract_ids_labels(content_file_path)
     
-    # karate data set
+    # Option0 [selection of data sets]-> karate data set
     edge_file_path = 'data/karate/karate.edgelist'
     output_path = 'out/karate/out_paths.txt'
     out_model_path = 'out/karate/model.txt'
@@ -215,6 +219,7 @@ if __name__ == '__main__':
             ids.extend([line_splited[0], line_splited[1]])
             line = f.readline()
     
+    # 构成图，画图确保图是不是正确的
     G = load_graph(edge_file_path, ids=ids, direction=False)
     plt.plot()
     nx.draw(G, with_labels=True)
@@ -222,7 +227,13 @@ if __name__ == '__main__':
     plt.show()
     alias_nodes = transition_node_prob_with_one_node(G)
     
-    paths = walks(G, 15, 30, alias_nodes)
+    # Option1 [selection of algorithms]-> deepwalk
+    # paths = walks(G, 15, 30, alias_nodes)
+    
+    # Option1 [selection of algorithms]-> node2vec
+    p, q, = 0.5, 0.5
+    alias_edges = transition_node_prob_with_two_nodes(G, False, p, q)
+    paths = node2vec_walks(G, 15, 30, alias_nodes, alias_edges)
     
     with open(output_path, 'w') as f:
         for path in paths:
@@ -230,15 +241,15 @@ if __name__ == '__main__':
             f.write(sentence + '\n')
     print("finish writing")
     
-    # 直接embedding到2维
+    # Option2 [selections of ways to get 2-dimension]-> embedding to 2dims directly
     # word2vec = Word2Vec(paths, size=2, window=3, iter=50)
     # vecs = word2vec.wv.vectors
     # X, Y = vecs[:, 0], vecs[:, 1]
     
-    # embedding到20维，用tSNE降维
+    # Option2 [selections of ways to get 2-dimension]-> embedding to 20dims ，decrease to 2dims with tSNE
     word2vec = Word2Vec(paths, size=20, window=5, iter=100)
     vecs = word2vec.wv.vectors
-    tsne = TSNE(n_components=2, learning_rate=100).fit_transform(vecs)
+    tsne = TSNE(n_components=2, learning_rate=1).fit_transform(vecs)
     X, Y = tsne[:, 0], tsne[:, 1]
     
     vocabs = word2vec.wv.index2word
