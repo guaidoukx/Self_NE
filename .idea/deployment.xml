@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="Self_NE">
+  <component name="PublishConfigData" autoUpload="Always" serverName="C23">
     <serverData>
-      <paths name="Self_NE">
+      <paths name="C23">
         <serverdata>
           <mappings>
             <mapping deploy="/XYL/PycharmProjects/Self_NE" local="$PROJECT_DIR$" web="/" />

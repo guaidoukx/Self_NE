@@ -86,7 +86,7 @@ class AliasSample:
                 small.append(larger)
             else:
                 large.append(larger)
-        while large:
+        while large:  # 当输进去的概率和不为1的时候，要有之后的过程。
             self.table_probs[large.pop()] = 1.0
         while small:
             self.table_probs[small.pop()] = 1.0
@@ -151,7 +151,8 @@ if __name__ == '__main__':
         "\nembedding_dim", embedding_dim,
         '\nepochs', epochs
     )
-    edgeWeightProbDict, outDegreeProbDict, outDegreeDict, embedding_size = load_data_construct_graph(edge_file_path, True, negative_power)
+    edgeWeightProbDict, outDegreeProbDict, outDegreeDict, embedding_size \
+        = load_data_construct_graph(edge_file_path, True, negative_power)
     edge_sampler = AliasSample(edgeWeightProbDict)
     neg_sampler = AliasSample(outDegreeProbDict)
  
